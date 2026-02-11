@@ -764,11 +764,11 @@ async function init() {
         const response = await fetch('/api/state');
         if (response.ok) {
             const d = await response.json();
-            STATE.projects = d.projects || DEFAULT_PROJECTS; 
+            STATE.projects = Array.isArray(d.projects) ? d.projects : DEFAULT_PROJECTS; 
             STATE.maxCapacity = d.maxCapacity || 70; 
             STATE.weights = d.weights || {...DEFAULT_WEIGHTS};
             STATE.criteria = d.criteria || JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
-            STATE.people = d.people || JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
+            STATE.people = Array.isArray(d.people) ? d.people : JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
             STATE.assignments = d.assignments || JSON.parse(JSON.stringify(DEFAULT_ASSIGNMENTS));
             STATE.triageItems = d.triageItems || [];
             lastSyncTime = Date.now();
@@ -783,11 +783,11 @@ async function init() {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) { 
                 const d = JSON.parse(raw); 
-                STATE.projects = d.projects || DEFAULT_PROJECTS; 
+                STATE.projects = Array.isArray(d.projects) ? d.projects : DEFAULT_PROJECTS; 
                 STATE.maxCapacity = d.maxCapacity || 70; 
                 STATE.weights = d.weights || {...DEFAULT_WEIGHTS};
                 STATE.criteria = d.criteria || JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
-                STATE.people = d.people || JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
+                STATE.people = Array.isArray(d.people) ? d.people : JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
                 STATE.assignments = d.assignments || JSON.parse(JSON.stringify(DEFAULT_ASSIGNMENTS));
             }
             else { STATE.projects = JSON.parse(JSON.stringify(DEFAULT_PROJECTS)); }
@@ -845,7 +845,7 @@ async function checkForUpdates() {
             if (serverTime > lastSyncTime + 5000) { // 5 second buffer
                 // New data available!
                 STATE.projects = d.projects || [];
-                STATE.people = d.people || {};
+                STATE.people = Array.isArray(d.people) ? d.people : JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
                 STATE.assignments = d.assignments || {};
                 STATE.triageItems = d.triageItems || [];
                 lastSyncTime = Date.now();
@@ -990,6 +990,10 @@ function scoreClass(v) { if(v>=8) return 'score-high'; if(v>=5) return 'score-mi
 // RENDER ALL
 // ═══════════════════════════════════════════════════════════════
 function renderAll() {
+    // Ensure STATE.people is an array
+    if (!Array.isArray(STATE.people)) {
+        STATE.people = JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
+    }
     const sp = sorted();
     const yearlyAvail = STATE.people.reduce((s,p) => s + getPersonYearlyAvail(p.id), 0);
     document.getElementById('headerStats').textContent = sp.length + ' projets · ' + STATE.people.length + ' ressources · ' + yearlyAvail + 'h/an · 12 mois';
