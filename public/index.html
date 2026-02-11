@@ -402,9 +402,9 @@
         <p style="color:var(--text-muted);font-size:0.9rem;margin-top:0.3rem">De la capture d'idées à l'approbation exécutive</p>
     </div>
     <div style="max-width:660px;margin:0 auto" id="workflowSteps"></div>
-    <div class="card" style="margin-top:1.5rem">
+    <div class="card" style="margin-top:1.5rem;overflow:visible">
         <div class="card-title">Les 4 branches du triage</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem" id="branchCards"></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;overflow:visible;padding-bottom:220px" id="branchCards"></div>
     </div>
     <div style="margin-top:1rem;background:var(--bg-card-hover);border-radius:12px;padding:1rem;border:1px dashed var(--border);text-align:center">
         <p style="margin:0;font-size:0.85rem;color:var(--text-dim)">↓ Après Gate 0 → <b style="color:var(--text-muted)">Teams Planner</b> (Chantal) → Gate 1 → Exécution → Gate 2 → Bénéfices → Gate 3</p>
@@ -919,74 +919,32 @@ function renderWorkflow() {
 
     document.getElementById('workflowSteps').innerHTML = html;
 
-    // Branch criteria for tooltips - make globally accessible
-    window.BRANCH_CRITERIA = {
-        project: {
-            title: '📋 PROJET',
-            subtitle: 'Initiative majeure nécessitant une charte',
-            criteria: ['✓ Ressources multi-départements', '✓ Nouvelle capacité à créer', '✓ Ressources externes requises', '✓ Budget dédié hors opérations', '✓ Durée > 90 jours', '✓ Impact stratégique si échec'],
-            next: '→ Charte de projet → Scoring → Gate 0'
-        },
-        continuous_improvement: {
-            title: '🔄 AMÉLIORATION CONTINUE',
-            subtitle: 'Optimisation de processus existant',
-            criteria: ['✓ Processus existant à améliorer', '✓ Pas de changement de système majeur', '✓ Équipe actuelle impliquée', '✗ Pas multi-départemental', '✗ Pas de ressources externes'],
-            next: '→ Gabarit DMAIC'
-        },
-        it_ticket: {
-            title: '🎫 BILLET TI',
-            subtitle: 'Demande technique ou correction',
-            criteria: ['✓ Bogue ou problème technique', '✓ Demande d\'accès ou équipement', '✓ Erreur système à corriger', '✓ Support technique requis'],
-            next: '→ Système de billets TI'
-        },
-        operations: {
-            title: '⚙️ OPÉRATIONS COURANTES',
-            subtitle: 'Travail régulier de l\'équipe',
-            criteria: ['✓ Processus existant', '✓ Équipe actuelle peut le faire', '✓ Dans le travail régulier', '✗ Pas de ressources supplémentaires', '✗ Pas de budget dédié'],
-            next: '→ Retour DMS / Huddle'
-        }
+    // Branch criteria for tooltips
+    const BRANCH_CRITERIA = {
+        project: { title: '📋 PROJET', subtitle: 'Initiative majeure nécessitant une charte', criteria: ['✓ Ressources multi-départements', '✓ Nouvelle capacité à créer', '✓ Ressources externes requises', '✓ Budget dédié hors opérations', '✓ Durée > 90 jours', '✓ Impact stratégique si échec'], next: '→ Charte de projet → Scoring → Gate 0' },
+        continuous_improvement: { title: '🔄 AMÉLIORATION CONTINUE', subtitle: 'Optimisation de processus existant', criteria: ['✓ Processus existant à améliorer', '✓ Pas de changement de système majeur', '✓ Équipe actuelle impliquée', '✗ Pas multi-départemental', '✗ Pas de ressources externes'], next: '→ Gabarit DMAIC' },
+        it_ticket: { title: '🎫 BILLET TI', subtitle: 'Demande technique ou correction', criteria: ['✓ Bogue ou problème technique', '✓ Demande d\'accès ou équipement', '✓ Erreur système à corriger', '✓ Support technique requis'], next: '→ Système de billets TI' },
+        operations: { title: '⚙️ OPÉRATIONS COURANTES', subtitle: 'Travail régulier de l\'équipe', criteria: ['✓ Processus existant', '✓ Équipe actuelle peut le faire', '✓ Dans le travail régulier', '✗ Pas de ressources supplémentaires', '✗ Pas de budget dédié'], next: '→ Retour DMS / Huddle' }
     };
 
-    let bhtml = '';
+    let bhtml = '<style>.branch-tip{position:relative}.branch-tip .tip-content{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);width:260px;margin-top:10px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;box-shadow:0 10px 40px rgba(0,0,0,0.2);z-index:99999;text-align:left}.branch-tip:hover .tip-content{display:block}.tip-arrow{position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(45deg);width:14px;height:14px;background:#fff;border-left:1px solid #e2e8f0;border-top:1px solid #e2e8f0}</style>';
+    
     Object.entries(BRANCHES).forEach(([k,b]) => {
-        bhtml += `<div class="branch-card branch-hover" style="background:${b.bg};cursor:pointer" data-branch="${k}">
+        const crit = BRANCH_CRITERIA[k];
+        bhtml += `<div class="branch-card branch-tip" style="background:${b.bg};cursor:pointer">
             <div style="font-size:1.5rem;margin-bottom:0.3rem">${b.icon}</div>
             <div style="font-size:0.78rem;font-weight:600;color:${b.color}">${b.label}</div>
             <div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.25rem">${k==='project'?'→ Charte → Scoring → Gate 0':k==='continuous_improvement'?'→ Gabarit DMAIC':k==='it_ticket'?'→ Système billets TI':'→ Retour DMS / Huddle'}</div>
-        </div>`;
-    });
-    document.getElementById('branchCards').innerHTML = bhtml;
-    
-    // Add event listeners after DOM is ready
-    document.querySelectorAll('.branch-hover').forEach(card => {
-        card.addEventListener('mouseenter', function(e) {
-            const k = this.dataset.branch;
-            const crit = window.BRANCH_CRITERIA[k];
-            const b = BRANCHES[k];
-            const rect = this.getBoundingClientRect();
-            
-            // Remove existing tooltip
-            const old = document.getElementById('branchTooltip');
-            if (old) old.remove();
-            
-            const tooltip = document.createElement('div');
-            tooltip.id = 'branchTooltip';
-            tooltip.innerHTML = `
-                <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(45deg);width:14px;height:14px;background:white;border-left:1px solid #e2e8f0;border-top:1px solid #e2e8f0"></div>
+            <div class="tip-content">
+                <div class="tip-arrow"></div>
                 <div style="font-size:0.9rem;font-weight:700;color:${b.color};margin-bottom:0.2rem">${crit.title}</div>
                 <div style="font-size:0.75rem;color:#718096;margin-bottom:0.75rem">${crit.subtitle}</div>
                 <div style="font-size:0.75rem;color:#2d3748;line-height:1.6">${crit.criteria.map(c => '<div style="margin:0.2rem 0">'+c+'</div>').join('')}</div>
                 <div style="margin-top:0.75rem;padding-top:0.6rem;border-top:1px dashed #e2e8f0;font-size:0.72rem;color:#3182ce;font-weight:600">${crit.next}</div>
-            `;
-            tooltip.style.cssText = 'position:fixed;top:'+(rect.bottom+10)+'px;left:'+(rect.left+rect.width/2)+'px;transform:translateX(-50%);width:280px;background:white;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;box-shadow:0 10px 40px rgba(0,0,0,0.2);z-index:99999;text-align:left';
-            document.body.appendChild(tooltip);
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            const tooltip = document.getElementById('branchTooltip');
-            if (tooltip) tooltip.remove();
-        });
+            </div>
+        </div>`;
     });
+    document.getElementById('branchCards').innerHTML = bhtml;
 }
 
 // ═══════════════════════════════════════════════════════════════
